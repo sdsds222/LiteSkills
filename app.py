@@ -5,10 +5,8 @@ import sys
 from google import genai
 from google.genai import types
 
-# ==========================================
-# ⚙️ 2026 核心配置
-# ==========================================
-MY_API_KEY = "AIzaSyDf6C7ybQrLsGyAO8sDWWU1VjTkO_OcN-A" # 请替换为你的实际 API_KEY
+
+MY_API_KEY = "" # 请替换为你的实际 API_KEY
 MODEL_ID = "gemini-2.5-pro"
 SKILLS_DIR = "skills"
 
@@ -20,7 +18,6 @@ class IntentDrivenSkillAgent:
         self.recycling_mode = False
 
     def _load_all_skills(self):
-        """扫描并加载所有技能，直接读取 MD 正文作为系统指令 (白盒化 Prompt)"""
         skills_map = {}
         if not os.path.exists(SKILLS_DIR): 
             os.makedirs(SKILLS_DIR)
@@ -52,7 +49,6 @@ class IntentDrivenSkillAgent:
         return skills_map
 
     def _get_target_skill(self, user_input):
-        """【意图路由】：让 Gemini 决定使用哪个技能，或者不使用"""
         if not self.skills: return None
         
         skill_list = "\n".join([f"- {name}: {info['description']}" for name, info in self.skills.items()])
@@ -101,18 +97,18 @@ class IntentDrivenSkillAgent:
             if user_input.lower() in ['debug', 'context', 'context_raw']:
                 self._print_debug_context()
                 continue
-            # 1. 意图路由判断
+
             target_skill_name = self._get_target_skill(user_input)
             
             if target_skill_name:
-                # 2. 命中技能：进入语义栈模式（带 Start/End 标签和回收）
+
                 self._run_skill_logic(user_input, target_skill_name)
             else:
-                # 3. 未命中：进入普通对话模式（无特殊标签，不回收）
+
                 self._run_general_logic(user_input)
 
     def _run_general_logic(self, user_input):
-        """普通聊天模式：像正常的 AI 一样交流"""
+
         print("正在响应...")
         contents = self.chat_history + [{"role": "user", "parts": [{"text": user_input}]}]
         
@@ -130,7 +126,7 @@ class IntentDrivenSkillAgent:
         self.chat_history.append({"role": "model", "parts": [{"text": full_text}]})
         print("\n" + "-" * 30)
     def _print_debug_context(self):
-        """【调试功能】：打印当前模型持有的真实上下文快照"""
+
         print("\n" + "="*20 + " CURRENT CONTEXT SNAPSHOT " + "="*20)
         if not self.chat_history:
             print("\033[90m(当前上下文为空)\033[0m")
@@ -157,7 +153,7 @@ class IntentDrivenSkillAgent:
         
         full_response_text = "<Skill_Start>\n"
         
-        # --- 🔄 万能推演循环：只要没看到 <Skill_End>，就一直套娃 ---
+
         while True:
             sys.stdout.write("\033[90m") # 保持思考区灰色
             sys.stdout.flush()
@@ -174,7 +170,7 @@ class IntentDrivenSkillAgent:
 
                 for chunk in stream:
                     txt = chunk.text
-                    if not txt: continue # 🟢 修复：防止 NoneType 报错
+                    if not txt: continue 
                     
                     turn_text += txt
                     full_response_text += txt
@@ -196,20 +192,20 @@ class IntentDrivenSkillAgent:
             except Exception as e:
                 print(f"\n传输中断: {e}"); break
 
-            # 🏁 检查是否已经彻底完成
+
             if "<Skill_End>" in turn_text:
                 break
             
-            # ⏸️ 如果模型停下了但没打 End，说明它在等数据（或没说完）
-            sys.stdout.write("\033[0m") # 恢复颜色，方便用户输入
+
+            sys.stdout.write("\033[0m") 
             print(f"\n\n\033[33m[待命] 模型暂未结束，请输入补充信息或工具结果: \033[0m")
             manual_input = input("补充 > ").strip()
             
-            # 将这一轮的“对话”和“用户手动喂的数据”合入临时上下文，继续循环
+
             current_session_contents.append({"role": "model", "parts": [{"text": turn_text}]})
             current_session_contents.append({"role": "user", "parts": [{"text": manual_input}]})
 
-        # --- ♻️ 物理坍缩（GC）：清理所有的中间过程 ---
+
         sys.stdout.write("\033[0m")
         sys.stdout.flush()
 
