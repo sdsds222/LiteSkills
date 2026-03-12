@@ -17,6 +17,8 @@ if (!fs.existsSync(LOGS_DIR)) fs.mkdirSync(LOGS_DIR);
  */
 const SYSTEM_INJECTION = `
 
+
+
 🚨🚨🚨 【系统底层最高强制指令：命名沙盒物理隔离与任务闭环协议 (绝对红线)】 🚨🚨🚨
 
 [系统通讯] 你当前处于 LiteSkills 动态沙盒管控之下。本协议直接接管你的“长期记忆写入权”与“上下文物理清理权”。请逐字解析并恪守以下生存法则，任何违背都将导致你的记忆链条发生灾难性断裂！
@@ -74,21 +76,21 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
         let buffer = Buffer.concat(bodyChunks);
         let payload; 
-        let rawMessages; // 提升作用域，用于存储未处理的原始数据副本
+        let rawMessages; 
 
         if (req.url.includes('/chat/completions') && req.method === 'POST') {
             try {
                 payload = JSON.parse(buffer.toString('utf8'));
                 if (payload.messages && payload.messages.length > 0) {
                     
-                    console.log(`\n${C.bold}${C.magenta}[代理核心] 开始上下文检查与压缩阶段...${C.reset}`);
+                    console.log(`\n${C.bold}${C.magenta}[代理核心] 开始上下文检查与时空折叠阶段...${C.reset}`);
 
                     // 0. 深拷贝保存未被处理的原始数据，并执行第一次落盘
                     rawMessages = JSON.parse(JSON.stringify(payload.messages));
                     fs.writeFileSync(path.join(LOGS_DIR, `context_raw.json`), JSON.stringify(rawMessages, null, 2));
                     console.log(`${C.cyan}[日志导出] 原始消息历史已导出至 context_raw.json${C.reset}`);
 
-                    // 1. 注入协议 (仅在 payload.messages 中注入，保持 rawMessages 纯净)
+                    // 1. 注入协议
                     let firstMsg = payload.messages[0];
                     if (firstMsg.role === 'system' || firstMsg.role === 'user') {
                         let content = Array.isArray(firstMsg.content) ? (firstMsg.content[0].text || "") : (firstMsg.content || "");
@@ -99,68 +101,76 @@ const server = http.createServer((req, res) => {
                         }
                     }
 
-                    // 2. 循环扫描与压缩
+                    // 2. 循环扫描与物理切除 (核心重构区)
                     let scanComplete = false;
                     let iteration = 0;
 
                     while (!scanComplete && iteration < 10) { 
                         iteration++;
-                        let startIdx = -1; let endIdx = -1; let currentSkillID = null;
+                        let startIdx = -1; 
+                        let endIdx = -1; 
+                        let currentSkillID = null;
 
+                        // 寻找闭合标签 (Assistant)
                         for (let i = payload.messages.length - 1; i >= 0; i--) {
                             let m = payload.messages[i];
-                            let text = JSON.stringify(m.content || "");
+                            let text = typeof m.content === 'string' ? m.content : JSON.stringify(m.content || "");
                             const match = text.match(/<\/SKILL_CLEAN:\s*([^>]+)>/i);
                             if (m.role === 'assistant' && match) {
-                                endIdx = i; currentSkillID = match[1].trim(); break;
+                                endIdx = i; 
+                                currentSkillID = match[1].trim(); 
+                                break;
                             }
                         }
 
+                        // 寻找对应的开启标签 (Tool)
                         if (endIdx !== -1 && currentSkillID) {
                             const escapedID = currentSkillID.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                             const startRegex = new RegExp(`<SKILL_CLEAN:\\s*${escapedID}\\s*>`, 'i');
                             for (let i = endIdx - 1; i >= 0; i--) {
                                 let m = payload.messages[i];
-                                let text = JSON.stringify(m.content || "");
+                                let text = typeof m.content === 'string' ? m.content : JSON.stringify(m.content || "");
                                 if (m.role === 'tool' && startRegex.test(text)) {
-                                    startIdx = i; break;
+                                    startIdx = i; 
+                                    break;
                                 }
                             }
                         }
 
-                        if (startIdx !== -1 && endIdx !== -1) {
-                            console.log(`${C.red}${C.bold}[内存管理] 正在压缩技能 [${currentSkillID}] 的上下文 (区间: ${startIdx} -> ${endIdx})${C.reset}`);
+                        // 实施“首尾保留 + 认知缝合”手术
+                        if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
+                            console.log(`${C.red}${C.bold}[内存重构] 正在执行技能 [${currentSkillID}] 的物理融合 (区间: ${startIdx} -> ${endIdx})${C.reset}`);
                             
-                            payload.messages = payload.messages.map((msg, i) => {
-                                let text = typeof msg.content === 'string' ? msg.content : (Array.isArray(msg.content) ? msg.content.map(p => p.text || "").join("") : JSON.stringify(msg.content));
-                                let isModified = false;
-                                const escapedID = currentSkillID.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const escapedID = currentSkillID.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-                                if (i === startIdx) {
-                                    const startRegex = new RegExp(`<SKILL_CLEAN:\\s*${escapedID}\\s*>`, 'i');
-                                    const match = text.match(startRegex);
-                                    if (match) {
-                                        const splitPoint = text.indexOf(match[0]);
-                                        text = `${text.substring(0, splitPoint).trim()}\n[Skill Context Compacted: ${currentSkillID}]`;
-                                        isModified = true;
-                                    }
-                                } else if (i === endIdx) {
-                                    const endRegex = new RegExp(`^[\\s\\S]*?<\\/SKILL_CLEAN:\\s*${escapedID}\\s*>\\n*`, 'i');
-                                    text = text.replace(endRegex, '').trim();
-                                    isModified = true;
-                                } else if (i > startIdx && i < endIdx) {
-                                    if (!text.includes("SOUL.md") && !text.includes("USER.md") && !text.includes("MEMORY.md") && !text.includes("memory/")) {
-                                        text = "[Execution Process Compacted]";
-                                        isModified = true;
-                                    }
-                                }
+                            // 【手术 A】：处理头部 Tool 块
+                            let startMsg = payload.messages[startIdx];
+                            let startText = typeof startMsg.content === 'string' ? startMsg.content : (Array.isArray(startMsg.content) ? startMsg.content.map(p => p.text || "").join("") : JSON.stringify(startMsg.content));
+                            
+                            // 匹配开启标签及其之后的所有内容，替换为纯英文占位符
+                            const startReplaceRegex = new RegExp(`<SKILL_CLEAN:\\s*${escapedID}\\s*>[\\s\\S]*$`, 'i');
+                            startText = startText.replace(startReplaceRegex, '\n\n[System Note: The detailed execution and trial process has been compacted for memory efficiency.]');
+                            
+                            if (Array.isArray(startMsg.content)) startMsg.content = [{ type: "text", text: startText }];
+                            else startMsg.content = startText;
 
-                                if (isModified) {
-                                    if (Array.isArray(msg.content)) msg.content = [{ type: "text", text: text }];
-                                    else msg.content = text;
-                                }
-                                return msg;
-                            });
+                            // 【手术 B】：处理尾部 Assistant 块
+                            let endMsg = payload.messages[endIdx];
+                            let endText = typeof endMsg.content === 'string' ? endMsg.content : (Array.isArray(endMsg.content) ? endMsg.content.map(p => p.text || "").join("") : JSON.stringify(endMsg.content));
+                            
+                            // 匹配闭合标签及其之前的所有内容并删除，只保留纯净总结
+                            const endReplaceRegex = new RegExp(`^[\\s\\S]*?<\\/SKILL_CLEAN:\\s*${escapedID}\\s*>\\n*`, 'i');
+                            endText = endText.replace(endReplaceRegex, '').trim();
+                            
+                            if (Array.isArray(endMsg.content)) endMsg.content = [{ type: "text", text: endText }];
+                            else endMsg.content = endText;
+
+                            // 【手术 C】：物理抹除中间所有骨架
+                            const deleteCount = endIdx - startIdx - 1;
+                            if (deleteCount > 0) {
+                                payload.messages.splice(startIdx + 1, deleteCount);
+                                console.log(`${C.green}[架构优化] 已成功抹除 ${deleteCount} 个中间消息块，实现零骨架税。${C.reset}`);
+                            }
                         } else {
                             scanComplete = true; 
                         }
