@@ -8,6 +8,8 @@
 
 Skill开发者需要遵循规范格式，SKILL写法可以参考skills文件夹里面的SKILL.md，只有在SKILL.md中引入**<CLEAN_SKILL:Skill名称ID>**标签，才能够被模型识别为LiteSkill技能，即用于声明当前skill使用LiteSkill上下文回收框架协议
 
+注意：开发者需要指定需要总结的保存的内容，模型会自动分析，为总结内容上方加上 **</CLEAN_SKILL:Skill名称ID>** 截止标签，进行除总结外的上下文垃圾回收裁剪。
+
 执行上下文回收操作后，从Skill开始执行到结束之间的执行Skill的所有tool返回和assistant推理过程全部被裁剪回收，脚本会将 **<CLEAN_SKILL:Skill名称ID>** 和 **</CLEAN_SKILL:Skill名称ID>** 之间的冗余信息（包括Skill描述信息）清空。
 
 只保留对Skill执行过程的浓缩的结论，实现节省上下文
