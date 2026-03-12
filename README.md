@@ -1,5 +1,7 @@
 # 实验项目 LiteSkill：一种上下文压缩机制的Skills框架
 
+先看流程效果演示视频：https://www.bilibili.com/video/BV16Nc6zNEk2
+
 一种针对于优化Skills缓解上下文过长臃肿问题的框架协议，将大量冗余多轮工具调用输入输出文本清除裁剪，实现节省token。
 
 Skill开发者需要遵循规范格式，在Skill中引入<CLEAN_SKILL Skill名称ID>标签，
