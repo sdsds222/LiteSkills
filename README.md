@@ -1,4 +1,4 @@
-# 实验项目 LiteSkill：一种上下文压缩机制的Skills框架
+# 实验项目 LiteSkills：一种上下文压缩机制的Skills框架
 
 **实验项目尚未完善，请谨慎使用。目前只实验过用Openclaw的openAI接口方式连接Gemini2.5pro，其他的模型可能会不兼容**
 
