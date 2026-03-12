@@ -249,7 +249,7 @@ trigger_keywords:
 <SKILL_CLEAN: {SKILL_ID}>
 
 # 技能执行流程
-# 最终总结
+# 最终总结（模型会自动为最终总结上方添加**</SKILL_CLEAN: {SKILL_ID}>**截止标签，标签上方内容回收，保留生成的总结信息）
 
 ```
 
